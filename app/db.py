@@ -23,7 +23,8 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
 class Post(Base):
     __tablename__ = "posts"
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False)
+    # user_id debe ser String porque SQLite no soporta UUID nativo, y User.id se almacena como String en SQLite
+    user_id = Column(String, ForeignKey("users.id"), nullable=True)  # Nullable por ahora para permitir posts sin usuario
      #creamos una relacion one to many: 1 user -> n posts
      # si quisieramos invertir la relacion definiriamos la FK en User
     caption = Column(Text)

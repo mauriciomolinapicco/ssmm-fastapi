@@ -15,7 +15,14 @@ from pathlib import Path
 
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
+
 SECRET = os.getenv("SECRET")
+
+if not SECRET:
+    SECRET = "dev-secret-key-change-in-production-minimum-32-characters-long"
+    print("⚠️  Advertencia: SECRET no configurado en .env, usando valor por defecto (solo para desarrollo)")
+elif len(SECRET) < 32:
+    raise ValueError("SECRET debe tener al menos 32 caracteres para JWT")
 
 class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     reset_password_token_secret = SECRET

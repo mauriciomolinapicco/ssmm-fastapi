@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form, Depends
-from app.schemas import PostCreate, PostResponse
+from app.schemas import PostCreate, PostResponse, UserRead, UserCreate, UserUpdate
 from app.db import Post, create_db_and_tables, get_async_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from contextlib import asynccontextmanager
@@ -20,6 +20,55 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan) # cuando empezamos la app se crea la db y las tablas
+
+# Rutas de autenticación JWT
+app.include_router(
+    fastapi_users.get_auth_router(auth_backend), 
+    prefix="/auth/jwt", 
+    tags=["auth"]
+)
+
+# Ruta de registro
+app.include_router(
+    fastapi_users.get_register_router(UserRead, UserCreate), 
+    prefix="/auth", 
+    tags=["auth"]
+)
+
+# Ruta de reset password (forgot password + reset password)
+app.include_router(
+    fastapi_users.get_reset_password_router(), 
+    prefix="/auth", 
+    tags=["auth"]
+)
+
+# Ruta de verificación de email
+app.include_router(
+    fastapi_users.get_verify_router(UserRead), 
+    prefix="/auth", 
+    tags=["auth"]
+)
+
+# Rutas de gestión de usuarios (requiere autenticación)
+app.include_router(
+    fastapi_users.get_users_router(UserRead, UserUpdate), 
+    prefix="/users", 
+    tags=["users"]
+)
+
+# Endpoint de diagnóstico para ver todas las rutas registradas
+@app.get("/debug/routes", tags=["debug"])
+async def debug_routes():
+    """Endpoint de diagnóstico para ver todas las rutas registradas"""
+    routes = []
+    for route in app.routes:
+        if hasattr(route, "path") and hasattr(route, "methods"):
+            routes.append({
+                "path": route.path,
+                "methods": list(route.methods),
+                "name": getattr(route, "name", "N/A")
+            })
+    return {"total_routes": len(routes), "routes": routes}
 
 
 @app.post("/upload")
