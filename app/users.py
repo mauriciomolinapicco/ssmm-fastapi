@@ -45,7 +45,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
-bearer_transport = BearerTransport(tokenUrl="auth/jwt/login") #url a la que mandan las credenciales para login
+bearer_transport = BearerTransport(tokenUrl="/auth/jwt/login") #url a la que mandan las credenciales para login
 
 def get_jwt_strategy() -> JWTStrategy:
     return JWTStrategy(secret=SECRET, lifetime_seconds=3600) #tiempo de vida del token en segundos
