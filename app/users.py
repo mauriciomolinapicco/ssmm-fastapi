@@ -9,5 +9,47 @@ from fastapi_users.authentication import (
 )
 from fastapi_users.db import SQLAlchemyUserDatabase
 from app.db import User, get_user_db
+from dotenv import load_dotenv
+import os
+from pathlib import Path
+
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
+SECRET = os.getenv("SECRET")
+
+class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
+    reset_password_token_secret = SECRET
+    verification_token_secret = SECRET
+
+    """ Funciones que se ejecutan despues de ciertas acciones """
+    async def on_after_register(
+        self, user: User, request: Optional[Request] = None
+    ):
+        print(f"User {user.id} has registered.")
+
+    async def on_after_forgot_password(
+        self, user: User, token: str, request: Optional[Request] = None
+    ):
+        print(f"User {user.id} has forgot their password. Token: {token}")
+    
+
+
+
+async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
+    yield UserManager(user_db)
+
+bearer_transport = BearerTransport(tokenUrl="auth/jwt/login") #url a la que mandan las credenciales para login
+
+def get_jwt_strategy() -> JWTStrategy:
+    return JWTStrategy(secret=SECRET, lifetime_seconds=3600) #tiempo de vida del token en segundos
+
+auth_backend = AuthenticationBackend(
+    name="jwt",
+    transport=bearer_transport,
+    get_strategy=get_jwt_strategy,
+)
+
+fastapi_users = FastAPIUsers[User, uuid.UUID](get_user_manager, [auth_backend])
+current_active_user = fastapi_users.current_user(active=True)
 
 

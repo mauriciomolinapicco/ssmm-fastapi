@@ -10,6 +10,9 @@ import shutil
 import os
 import uuid 
 import tempfile 
+from app.users import fastapi_users, current_active_user, auth_backend
+
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
